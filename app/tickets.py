@@ -43,7 +43,7 @@ def create_ticket(
     init_db()
 
     category_val = (
-        decusuib.category.value
+        decision.category.value
         if hasattr(decision.category, "value")
         else str(decision.category)
     )
