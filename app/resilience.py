@@ -37,7 +37,7 @@ def _is_retryable_error(exc: BaseException) -> bool:
     return any(keyword in error_text for keyword in transient_keywords)
 
 @retry(
-    stop=stop_after_attemp(3),
+    stop=stop_after_attempt(3),
     wait=wait_exponential_jitter(initial=1, max=8, jitter=1),
     retry=retry_if_exception(_is_retryable_error),
     before_sleep=before_sleep_log(logger, logging.WARNING),
@@ -54,8 +54,8 @@ def classify_with_resilience(
     fallback_name: str | None = None,
 ) -> tuple[AiIntent, str]:
     """switch provider on max timeout, returns llm used and response"""
-    primary_key = (primary_key or os.getenv("PRIMARY_PROVIDER", "gemini")).strip().lower()
-    fallback_key = (fallback_key or os.getvent("FALLBACK_PROVIDER", "")).strip().lower()
+    primary_key = (primary_name or os.getenv("PRIMARY_PROVIDER", "gemini")).strip().lower()
+    fallback_key = (fallback_name or os.getenv("FALLBACK_PROVIDER", "")).strip().lower()
 
     primary_provider = create_provider(primary_key)
 

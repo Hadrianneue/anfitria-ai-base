@@ -6,7 +6,7 @@ from google.genai import types
 from openai import OpenAI
 
 from app.prompts import SYSTEM_PROMPT, build_user_prompt
-from app.schemas import AiIntent, Incoming_Message
+from app.schemas import AiIntent, IncomingMessage
 
 
 class BaseLLM(ABC):
@@ -14,9 +14,9 @@ class BaseLLM(ABC):
     name: str = "base"
 
     @abstractmethod
-    def classify(self, message: Incoming_Message) -> AiIntent:
+    def classify(self, message: IncomingMessage) -> AiIntent:
         """takes guest message and returns an structured response"""
-    raise NotImplementedError
+        raise NotImplementedError
 
 
 class GeminiProvider(BaseLLM):
@@ -26,17 +26,17 @@ class GeminiProvider(BaseLLM):
         self.model = model
         self.client = genai.Client(api_key=api_key)
 
-    def classify(self, message: Incoming_Message) -> AiIntent:
-        user_prompt = build_user_prompt(message.username, message.text)
+    def classify(self, message: IncomingMessage) -> AiIntent:
+        user_prompt = build_user_prompt(message.guest_name, message.text)
 
         response = self.client.models.generate_content(
             model=self.model,
             contents=user_prompt,
             config=types.GenerateContentConfig(
-                system_instructions=SYSTEM_PROMPT,
-                response_mime_types="application/json",
+                system_instruction=SYSTEM_PROMPT,
+                response_mime_type="application/json",
                 response_schema=AiIntent,
-                temperature=0.2
+                temperature=0.2,
             ),
         )
         return AiIntent.model_validate_json(response.text)
@@ -58,7 +58,7 @@ class OpenAICompatibleProvider(BaseLLM):
         self.strict_schema = strict_schema
         self.client = OpenAI(api_key=api_key, base_url=base_url)
 
-    def classify(self, message: Incoming_Message) -> AiIntent:
+    def classify(self, message: IncomingMessage) -> AiIntent:
         user_prompt = build_user_prompt(message.guest_name, message.text)
         schema = AiIntent.model_json_schema()
 
@@ -110,7 +110,7 @@ class PyTorchProvider(BaseLLM):
             device_map="auto",
         )
 
-    def classify(self, message: Incoming_Message) -> AiIntent:
+    def classify(self, message: IncomingMessage) -> AiIntent:
         schema = AiIntent.model_json_schema()
         system_msg = (
             f"{SYSTEM_PROMPT}\n\n"
@@ -150,7 +150,10 @@ _PROVIDER_CACHE: dict[str, BaseLLM] = {}
 
 def create_provider(name: str | None):
     """Factory that instantiates the requested LLM provider"""
-    selected = (name or os.getenv("PRIMARY_PROVIDER", "gemini")).strip.lower()
+    selected = (name or os.getenv("PRIMARY_PROVIDER", "gemini")).strip().lower()
+
+    if selected in _PROVIDER_CACHE:
+        return _PROVIDER_CACHE[selected]
 
     if selected == "gemini":
         api_key = os.getenv("GEMINI_API_KEY", "")

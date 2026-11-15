@@ -45,7 +45,7 @@ class AiIntent(BaseModel):
         description="Only required if guest talks about dates or guest number"
     )
 
-class Incoming_Message(BaseModel):
+class IncomingMessage(BaseModel):
     """Represents a message received on whatsapp"""
     phone: str
     guest_name: str = "Guest"
