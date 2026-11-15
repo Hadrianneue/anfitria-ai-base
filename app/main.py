@@ -65,5 +65,5 @@ def get_tickets(
     )
 ):
     """lists stored tickets from db"""
-    ticket = list_tickets(status-status)
-    return {"count": len(tickets), "tickets": ttickets}
+    ticket = list_tickets(status=status)
+    return {"count": len(ticket), "tickets": ticket}
